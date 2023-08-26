@@ -1,10 +1,9 @@
 use actix_web::{web, HttpResponse};
-use sqlx::PgPool;
-use serde::Deserialize;
 use chrono::Utc;
+use serde::Deserialize;
+use sqlx::PgPool;
 use uuid::Uuid;
 
-#[allow(dead_code)] // @todo: remove later
 #[derive(Deserialize)]
 pub struct FormData {
     email: String,
@@ -18,12 +17,12 @@ pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> Ht
         VALUES($1, $2, $3, $4)
         "#,
         Uuid::new_v4(),
-        form.name,
         form.email,
+        form.name,
         Utc::now(),
     )
     .execute(pool.get_ref())
-    .await 
+    .await
     {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => {
