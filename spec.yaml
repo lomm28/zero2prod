@@ -1,5 +1,5 @@
 name: zero2prod
-region: fra1 # https://www.digitalocean.com/docs/platform/availability-matrix/
+region: fra # https://www.digitalocean.com/docs/platform/availability-matrix/
 services:
   - name: zero2prod
     envs:
@@ -18,27 +18,17 @@ services:
       - key: APP_DATABASE__DATABASE_NAME
         scope: RUN_TIME
         value: ${newsletter.DATABASE}
-    # Relative to the repository root
     dockerfile_path: Dockerfile
     source_dir: .
     github:
-      # Depending on when you created the repository,
-      # the default branch on GitHub might have been named `master`
       branch: main
       # Deploy a new version on every commit to `main`!
-      # Continuous Deployment, here we come!
       deploy_on_push: true
       repo: lomm28/zero2prod
-    # Active probe used by DigitalOcean's to ensure our application is healthy
     health_check:
-      # The path to our health check endpoint!
-      # It turned out to be useful in the end!
       http_path: /health_check
-    # The port the application will be listening on for incoming requests
-    # It should match what we specified in our configuration/production.yaml file!
+    # should match what we specified in our configuration/production.yaml file!
     http_port: 8002
-    # For production workloads we'd go for at least two!
-    # But let's try to keep the bill under control for now...
     instance_count: 1
     instance_size_slug: basic-xxs
     # All incoming requests should be routed to our app
