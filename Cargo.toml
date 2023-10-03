@@ -13,6 +13,8 @@ path = "src/main.rs"
 name = "zero2prod"
 
 [dependencies]
+anyhow = "1"
+thiserror = "1"
 validator = "0.16"
 claims = "0.7"
 unicode-segmentation = "1"
