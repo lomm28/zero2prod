@@ -13,6 +13,8 @@ path = "src/main.rs"
 name = "zero2prod"
 
 [dependencies]
+argon2 = { version = "0.4", features = ["std"] }
+base64 = "0.21"
 anyhow = "1"
 thiserror = "1"
 validator = "0.16"
