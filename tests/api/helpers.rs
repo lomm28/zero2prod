@@ -14,10 +14,11 @@ pub struct TestApp {
     pub db_pool: PgPool,
     pub email_server: MockServer,
     pub port: u16,
-    test_user: TestUser,
+    pub test_user: TestUser,
     pub api_client: reqwest::Client,
 }
 
+#[derive(Debug)]
 pub struct TestUser {
     pub user_id: Uuid,
     pub username: String,
@@ -31,6 +32,17 @@ pub struct ConfirmationLinks {
 }
 
 impl TestApp {
+    pub async fn get_admin_dashboard(&self) -> String {
+        self.api_client
+            .get(&format!("{}/admin/dashboard", &self.address))
+            .send()
+            .await
+            .expect("Failed to execute request")
+            .text()
+            .await
+            .unwrap()
+    }
+
     pub async fn get_login_html(&self) -> String {
         self.api_client
             .get(&format!("{}/login", &self.address))

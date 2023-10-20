@@ -32,7 +32,8 @@ tracing-subscriber = { version = "0.3", features = ["registry", "env-filter"] }
 tracing-bunyan-formatter = "0.3"
 config = "0.13"
 actix-web = "4"
-uuid = { version = "1", features = ["v4"] }
+actix-session = { version = "0.7", features = ["redis-rs-tls-session"] }
+uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4.22", default-features = false, features = ["clock"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 serde = { version = "1", features = ["derive"]}
