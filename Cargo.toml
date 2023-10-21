@@ -13,6 +13,7 @@ path = "src/main.rs"
 name = "zero2prod"
 
 [dependencies]
+serde_json = "1"
 actix-web-flash-messages = { version = "0.4", features = ["cookies"] }
 htmlescape = "0.3"
 urlencoding = "2"
