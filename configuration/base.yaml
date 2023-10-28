@@ -9,7 +9,7 @@ database:
   password: "password"
   database_name: "newsletter"
 email_client:
-  base_url: "localhost"
-  sender_email: "test@gmail.com"
-  authorization_token: "my-secret-token"
+  base_url: "https://api.postmarkapp.com"
+  sender_email: "dmytro.d@spyingcrow.com"
+  authorization_token: "email-service-provider-token"
   timeout_milliseconds: 10000
