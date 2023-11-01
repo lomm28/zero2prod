@@ -6,9 +6,9 @@ use std::fmt::Write;
 pub async fn newsletters_form(
     flash_messages: IncomingFlashMessages,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let mut error_html = String::new();
+    let mut msg_html = String::new();
     for m in flash_messages.iter() {
-        writeln!(error_html, "<p><i>{}</i></p>", m.content()).unwrap();
+        writeln!(msg_html, "<p><i>{}</i></p>", m.content()).unwrap();
     }
 
     Ok(HttpResponse::Ok()
@@ -21,35 +21,38 @@ pub async fn newsletters_form(
                     <title>Send a newsletter issue</title>
                 </head>
                 <body>
-                    {error_html}
-                    <form action="/admin/newsletters" method="post">
-                        <label>Title
-                            <input
-                                type="text"
-                                placeholder="Newsletter title"
-                                name="title"
-                            >
-                        </label>
-                        <br/>
-                        <label>Text Content
-                            <input
-                                type="text"
-                                placeholder="Text content"
-                                name="text_content"
-                            >
-                        </label>
-                        <br/>
-                        <label>Html Content
-                            <input
-                                type="text"
-                                placeholder="Html content"
-                                name="html_content"
-                            >
-                        </label>
-                        <br/>
-                        <button type="submit">Send</button>
-                    </form>
-                </body>
+                {msg_html}
+                <form action="/admin/newsletters" method="post">
+                    <label>Title:<br>
+                        <input
+                            type="text"
+                            placeholder="Enter the issue title"
+                            name="title"
+                        >
+                    </label>
+                    <br>
+                    <label>Plain text content:<br>
+                        <textarea
+                            placeholder="Enter the content in plain text"
+                            name="text_content"
+                            rows="20"
+                            cols="50"
+                        ></textarea>
+                    </label>
+                    <br>
+                    <label>HTML content:<br>
+                        <textarea
+                            placeholder="Enter the content in HTML format"
+                            name="html_content"
+                            rows="20"
+                            cols="50"
+                        ></textarea>
+                    </label>
+                    <br>
+                    <button type="submit">Publish</button>
+                </form>
+                <p><a href="/admin/dashboard">&lt;- Back</a></p>
+            </body>
             </html>"#
         )))
 }

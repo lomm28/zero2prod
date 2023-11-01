@@ -1,11 +1,11 @@
+use crate::authentication::UserId;
 use crate::domain::SubscriberEmail;
 use crate::email_client::EmailClient;
 use crate::routes::error_chain_fmt;
-use crate::routes::get_username;
-use crate::session_state::TypedSession;
 use crate::utils::{e500, see_other};
 use actix_web::http::header::HeaderValue;
 use actix_web::http::StatusCode;
+use actix_web::web::ReqData;
 use actix_web::{web, HttpResponse, ResponseError};
 use actix_web_flash_messages::FlashMessage;
 use reqwest::header;
@@ -58,24 +58,15 @@ pub struct BodyData {
 
 #[tracing::instrument(
     name = "Publish a newsletter issue",
-    skip(body, pool, email_client, session),
-    fields(username=tracing::field::Empty, user_id=tracing::field::Empty)
+    skip(body, pool, email_client, user_id),
+    fields(user_id=%*user_id)
 )]
 pub async fn publish_newsletter(
     body: web::Form<BodyData>,
     pool: web::Data<PgPool>,
     email_client: web::Data<EmailClient>,
-    session: TypedSession,
+    user_id: ReqData<UserId>,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let username = if let Some(user_id) = session.get_user_id().map_err(e500)? {
-        tracing::Span::current().record("user_id", &tracing::field::display(&user_id));
-        get_username(user_id, &pool).await.map_err(e500)?
-    } else {
-        return Ok(see_other("/login"));
-    };
-
-    tracing::Span::current().record("username", &tracing::field::display(&username));
-
     let subscribers = get_confirmed_subscribers(&pool).await.map_err(e500)?;
 
     for subscriber in subscribers {
@@ -107,7 +98,6 @@ pub async fn publish_newsletter(
                     "Skipping a confirmed subscriber. \
                     Their stored contact details are invalid",
                 );
-                FlashMessage::error("Could not send an email").send();
             }
         }
     }
