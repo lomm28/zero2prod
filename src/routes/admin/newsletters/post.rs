@@ -1,8 +1,9 @@
 use crate::authentication::UserId;
 use crate::domain::SubscriberEmail;
 use crate::email_client::EmailClient;
+use crate::idempotency::{save_response, try_processing, IdempotencyKey, NextAction};
 use crate::routes::error_chain_fmt;
-use crate::utils::{e500, see_other};
+use crate::utils::{e400, e500, see_other};
 use actix_web::http::header::HeaderValue;
 use actix_web::http::StatusCode;
 use actix_web::web::ReqData;
@@ -50,35 +51,51 @@ struct ConfirmedSubscriber {
 }
 
 #[derive(serde::Deserialize)]
-pub struct BodyData {
+pub struct FormData {
     title: String,
     html_content: String,
     text_content: String,
+    idempotency_key: String,
 }
 
 #[tracing::instrument(
     name = "Publish a newsletter issue",
-    skip(body, pool, email_client, user_id),
+    skip(form, pool, email_client, user_id),
     fields(user_id=%*user_id)
 )]
 pub async fn publish_newsletter(
-    body: web::Form<BodyData>,
+    form: web::Form<FormData>,
     pool: web::Data<PgPool>,
     email_client: web::Data<EmailClient>,
     user_id: ReqData<UserId>,
 ) -> Result<HttpResponse, actix_web::Error> {
+    let FormData {
+        title,
+        text_content,
+        html_content,
+        idempotency_key,
+    } = form.0;
+    let idempotency_key: IdempotencyKey = idempotency_key.try_into().map_err(e400)?;
+
+    // Return early if we have a saved response in the database
+    let transaction = match try_processing(&pool, &idempotency_key, **user_id)
+        .await
+        .map_err(e500)?
+    {
+        NextAction::StartProcessing(t) => t,
+        NextAction::ReturnSavedResponse(saved_response) => {
+            success_message().send();
+            return Ok(saved_response);
+        }
+    };
+
     let subscribers = get_confirmed_subscribers(&pool).await.map_err(e500)?;
 
     for subscriber in subscribers {
         match subscriber {
             Ok(subscriber) => {
                 if let Err(_e) = email_client
-                    .send_email(
-                        &subscriber.email,
-                        &body.title,
-                        &body.html_content,
-                        &body.text_content,
-                    )
+                    .send_email(&subscriber.email, &title, &html_content, &text_content)
                     .await
                 {
                     FlashMessage::error(format!(
@@ -102,8 +119,16 @@ pub async fn publish_newsletter(
         }
     }
 
-    FlashMessage::info("The newsletter issue has been published").send();
-    Ok(see_other("/admin/newsletters"))
+    success_message().send();
+    let response = see_other("/admin/newsletters");
+    let response = save_response(transaction, &idempotency_key, **user_id, response)
+        .await
+        .map_err(e500)?;
+    Ok(response)
+}
+
+fn success_message() -> FlashMessage {
+    FlashMessage::info("The newsletter issue has been published!")
 }
 
 #[tracing::instrument(name = "Get confirmed subscribers", skip(pool))]
