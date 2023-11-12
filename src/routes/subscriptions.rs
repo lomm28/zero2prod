@@ -90,15 +90,15 @@ impl std::error::Error for StoreTokenError {
 }
 
 #[derive(Deserialize)]
-pub struct FormData {
+pub struct SubscribeFormData {
     email: String,
     name: String,
 }
 
-impl TryFrom<FormData> for NewSubscriber {
+impl TryFrom<SubscribeFormData> for NewSubscriber {
     type Error = String;
 
-    fn try_from(value: FormData) -> Result<Self, Self::Error> {
+    fn try_from(value: SubscribeFormData) -> Result<Self, Self::Error> {
         let name = SubscriberName::parse(value.name)?;
         let email = SubscriberEmail::parse(value.email)?;
 
@@ -115,7 +115,7 @@ impl TryFrom<FormData> for NewSubscriber {
     )
 )]
 pub async fn subscribe(
-    form: web::Form<FormData>,
+    form: web::Form<SubscribeFormData>,
     pool: web::Data<PgPool>,
     email_client: web::Data<EmailClient>,
     base_url: web::Data<ApplicationBaseUrl>,
